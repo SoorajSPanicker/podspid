@@ -1,0 +1,714 @@
+/* .cont{
+    bottom: 0;
+    height: 100%;
+} */
+.left {
+    width:260px;
+    height: 100vh;
+}
+
+div#sideNav {
+    position: fixed;
+    background-color: #181818;
+    scrollbar-color: #151515 #2A2A2A;
+    z-index: 1;
+    overflow: hidden;
+}
+
+div.sideLnkInactive {
+    padding: 9px 15px;
+   
+}
+
+div.sideLnkInactive:hover {
+    background: #242849;
+}
+
+div#openFileButton:hover {
+    background-color: #242849;
+}
+
+i.sideLnkIcon {
+    width: 20px;
+    margin-top: 2px;
+    font-size: 16px;
+    color: #AAAAAA;
+    text-align: center;
+}
+
+a.sideLnk {
+    position: absolute;
+    padding-top: 2px;
+    left: 50px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: default;
+    text-decoration: none;
+    color: white;
+    font-size: 13px;
+    cursor: pointer
+}
+
+img#hsSideNav {
+    position: fixed;
+    top: 65px;
+    left:260px;
+    width: 24px;
+    height: 42px;
+    display: block;
+    cursor: pointer;
+    z-index: 100;
+}
+
+img#nonhsSideNav {
+    position: fixed;
+    top: 65px;
+    width: 24px;
+    height: 42px;
+    display: block;
+    cursor: pointer;
+    z-index: 100;
+}
+
+/* TAG SUB OPT */
+
+#tagsubopt {
+    color: white;
+    font-size: smaller;
+    text-align: center;
+    margin: 1% 0 1% 0;
+    padding: 1% 0 1% 0;
+    cursor: pointer;
+}
+
+#taghead {
+    background-color: #606BCB;
+}
+
+#tagb {
+    color: black;
+}
+
+ .tagtab {
+   position: fixed;
+} 
+
+/* DOC SUB OPT */
+#docsubopt {
+    color: white;
+    font-size: smaller;
+    text-align: center;
+    margin: 1% 0 1% 0;
+    padding: 1% 0 1% 0;
+    cursor: pointer;
+}
+
+.doctab{
+    position: fixed;
+}
+
+/* OPEN FOLDER */
+#openFileButton {
+    text-align: center;
+    border: 1px solid #5B66CB;
+    margin: 10px 30px;
+    padding: 8px;
+    border-radius: 20px;
+    font-size: 17px;
+    color: white;
+    cursor: default;
+}
+
+.infotable{
+    width: 100%; /* Ensure the table width is as wide as its content */
+    table-layout: auto;
+    border-collapse: collapse;
+    color: #f0f0f0;
+    font-size: 14px;
+    text-align: left;
+    z-index: 1;
+   
+}
+
+.infotable thead{
+    text-align: center;
+    position: sticky;
+  }
+  
+  .infotable th,
+  .infotable td {
+    padding: 8px;
+    border: 1px solid #C6C6C6;
+    white-space: nowrap;
+  }
+  
+  .infotable th:first-child,
+  .infotable td:first-child,
+  .infotable th:last-child,
+  .infotable td:last-child {
+    position: sticky;
+    background-color: #606BCB;
+    z-index: 2;
+  }
+  
+  .infotable th:first-child,
+  .infotable td:first-child {
+    left: 0;
+    box-shadow: 6px 0 5px -4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .infotable th:last-child,
+  .infotable td:last-child {
+    right: 0;
+    box-shadow: -6px 0 5px -4px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Sticky header row */
+  .infotable th {
+    background-color: #606BCB;
+   
+  }
+  
+  /* Optional: Alternate row colors */
+  .infotable tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  
+  .infotable tr:hover {
+    background-color: #f2f2f2;
+  }
+  .infotable tbody tr input{
+    width: '100%';
+    border: none;
+    margin: 0;
+    padding: 0
+  }
+
+/* LINE LIST OPT */
+
+th.shortHead {
+    width: 30px;
+  }
+  
+  th.mediumHead {
+    width: 100px;
+  }
+  
+  th.wideHead {
+    min-width: 130px;
+  }
+  
+  .extraWideHead {
+    min-width: 250px;
+  }
+  .linetable {
+    width: max-content; /* Ensure the table width is as wide as its content */
+    table-layout: auto;
+    border-collapse: collapse;
+    color: #f0f0f0;
+    font-size: 14px;
+    text-align: left;
+    z-index: 1;
+    
+  }
+  .linetable thead{
+    text-align: center;
+    position: sticky;
+  }
+  
+  .linetable th,
+  .linetable td {
+    padding: 8px;
+    border: 1px solid #C6C6C6;
+    white-space: nowrap;
+  }
+  
+  .linetable th:first-child,
+  .linetable td:first-child,
+  .linetable th:last-child,
+  .linetable td:last-child {
+    position: sticky;
+    background-color: #606BCB;
+    z-index: 2;
+  }
+  
+  .linetable th:first-child,
+  .linetable td:first-child {
+    left: 0;
+    box-shadow: 6px 0 5px -4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .linetable th:last-child,
+  .linetable td:last-child {
+    right: 0;
+    box-shadow: -6px 0 5px -4px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Sticky header row */
+  .linetable th {
+    background-color: #606BCB;
+   
+  }
+  
+  /* Optional: Alternate row colors */
+  .linetable tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  
+  .linetable tr:hover {
+    background-color: #f2f2f2;
+  }
+  .linetable tbody tr input{
+    width: '100%';
+    border: none;
+    margin: 0;
+    padding: 0
+  }
+  
+  .table-container {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 100%;
+    height: 88vh; 
+    width: 100%;
+    background-color: #f0f0f0;
+    z-index: 1;
+    position: relative;
+  }
+
+
+/* 
+.linetab {
+    position: fixed;
+    overflow: auto;
+    height: 100%;
+}
+
+#linehead {
+    background-color: #606BCB;
+} */
+
+/* EQU LIST */
+.equtab {
+    position: fixed;
+    overflow: auto;
+    height: 100%;
+}
+
+#equhead {
+    background-color: #606BCB;
+}
+
+/* .eqptable{
+    overflow-x: auto;
+} */
+
+.eqptable {
+    width: max-content; /* Ensure the table width is as wide as its content */
+    table-layout: auto;
+    border-collapse: collapse;
+    color: #f0f0f0;
+    font-size: 14px;
+    text-align: left;
+    z-index: 1;
+    overflow-x: auto;
+  }
+
+.eqptable th:first-child,
+td:first-child,
+th:last-child,
+td:last-child {
+  /* position: sticky;
+  background-color: #606BCB;
+  z-index: 2; */
+  position: sticky;
+    right: 0;
+    z-index: 3;
+}
+
+.project-dialog{
+    border:solid;
+    width: 310px;
+    height: 330px;
+    background-color: #ebebf0;
+    margin-left: 25%;
+    margin-top: 10%;
+    border-radius: 10px;
+    border-color: #090909;
+    color: #090909;
+    position: absolute;
+  
+  }
+
+  .title-dialog{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    background-color: black;
+    padding-top: 10px;
+    height: 40px;
+    padding-left: 5px;
+    padding-right: 5px;
+  
+  }
+  .title-dialog p{
+    font-weight: bold;
+  }
+  .title-dialog .cross{
+    font-weight: bold;
+    font-size: 25px;
+    cursor: pointer;
+  }
+
+  .dialog-input{
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 5px;
+  }
+  .dialog-input input{
+    width: 100%;
+  
+  }
+  .dialog-input textarea{
+    width: 100%;
+  
+  }
+  .dialog-button{
+    float: right;
+    padding: 5px;
+    padding-right: 10px;
+    border-radius: 4px;
+    background-color: #dededf;
+    width: 100%;
+  }
+
+  /* .projectbtn{
+    background-color: #515CBC;
+    border: none;
+    color: #f0f0f0;
+  } */
+
+
+  .heading{
+    background-color: #181818;
+    color: #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px;
+    font-weight: bolder;
+  }
+
+  .footing{
+    background-color: #181818;
+    color: #f0f0f0;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    padding: 3px;
+    font-size: 13px;
+  }
+/* TAG REGISTER */
+
+.tagreg {
+    position: fixed;
+    height: 100%;
+    padding: 3% 3%;
+    background-color: #303030;
+    color: #F0F0F0;
+}
+
+/* TAG DOC COMMON */
+section.page-section {
+    padding: 0;
+    margin: 0 0 20px 0;
+    border-bottom: 1px solid #404040;
+}
+
+div.row {
+    margin-bottom: 20px;
+}
+
+/* AREA REGISTER */
+
+.areareg {
+  position: fixed;
+  height: 100%;
+  padding: 3% 3%;
+  background-color: #303030;
+  color: #F0F0F0;
+}
+
+ /* ALERT AND CONFIRM DELETE */
+ .custom-alert {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.5); /* semi-transparent background */
+    z-index: 9999; /* high z-index to ensure it appears above other elements */
+  }
+  
+  .custom-alert-content {
+    background-color: white;
+    border: 2px solid black; /* black border */
+    padding: 20px;
+    border-radius: 8px;
+    text-align: left;
+    min-width: 300px;
+    position: relative;
+  }
+  
+  .custom-alert-content p {
+    margin-bottom: 20px;
+  }
+  
+  .button-container {
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  .custom-alert-content button {
+    padding: 5px 10px;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .custom-alert-content button:hover {
+    background-color: #0056b3;
+  }
+  
+  .custom-confirm {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.5); 
+    z-index: 9999; 
+  }
+  
+  .custom-confirm-content {
+    background-color: white;
+    border: 2px solid black; /* black border */
+    padding: 20px;
+    border-radius: 8px;
+    text-align: left;
+    min-width: 300px;
+    position: relative;
+  }
+  
+  .custom-confirm-content p {
+    margin-bottom: 20px;
+  }
+  
+  .button-container {
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  .button-container .btn {
+    padding: 5px 10px;
+    margin-left: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .button-container .btn-cancel {
+    background-color: #f44336;
+    color: white;
+  }
+  
+  .button-container .btn-cancel:hover {
+    background-color: #d32f2f;
+  }
+  
+  .button-container .btn-confirm {
+    background-color: #007bff;
+    color: white;
+  }
+  
+  .button-container .btn-confirm:hover {
+    background-color: #0056b3;
+  }
+
+  /* DOC REVIEW OPT */
+
+#dochead {
+    background-color: #606BCB;
+}
+
+/* DOC REGISTER */
+
+.docreg{
+    position: fixed;
+    height: 100%;
+    padding: 3% 3%;
+    background-color: #303030;
+    color: #F0F0F0;
+}
+
+
+/* ONLY CENTER PART */
+
+
+
+div.tabDiv {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    font-size: 13px;
+    overflow: auto;
+    color: #F0F0F0;
+}
+
+div.sideLnkDiv {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+
+}
+
+div.action-bar {
+    border-bottom: 1px solid #303030;
+}
+
+div.action-bar h1 {
+    display: inline-block;
+    margin: 14px 12px;
+    font-size: 21px;
+}
+
+div.action-bar i {
+    float: right;
+    margin: 19px;
+    margin-left: 0;
+    font-size: 19px;
+    cursor: pointer;
+}
+
+#main {
+    position: fixed;
+    height: 100%;
+}
+
+.footText{
+    padding: 0 10px;
+    line-height: 32px;
+    font-size: 11px;
+    color: #B8B8B8
+}
+
+/* COMMENT SECTION */
+
+.comment-modal-content {
+  background-color: #fefefe;
+  padding: 20px;
+  height: auto;
+}
+
+#commentInput {
+  width: 100%;
+  height: 100px;
+  margin-bottom: 10px;
+}
+
+#status {
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+button.closeBtn {
+  background-color: #ccc;
+  height: auto;
+}
+
+button#addCommentBtn {
+  background-color: #0d0d0d;
+  color: #fff;
+  height: auto;
+
+}
+
+.taginfotable {
+  width: max-content; /* Ensure the table width is as wide as its content */
+  table-layout: auto;
+  border-collapse: collapse;
+  color: #f0f0f0;
+  font-size: 14px;
+  text-align: left;
+  z-index: 1;
+  
+}
+
+.taginfotable thead{
+  text-align: center;
+  position: sticky;
+}
+
+.taginfotable th,
+.taginfotable td {
+  padding: 8px;
+  /* border: 1px solid #C6C6C6; */
+  white-space: nowrap;
+}
+
+.taginfotable th:first-child,
+.taginfotable td:first-child,
+.taginfotable th:last-child,
+.taginfotable td:last-child {
+  position: sticky;
+  background-color: #606BCB;
+  z-index: 2;
+}
+
+.taginfotable th:first-child,
+.taginfotable td:first-child {
+  left: 0;
+  box-shadow: 6px 0 5px -4px rgba(0, 0, 0, 0.1);
+}
+
+.taginfotable th:last-child,
+.taginfotable td:last-child {
+  right: 0;
+  box-shadow: -6px 0 5px -4px rgba(0, 0, 0, 0.1);
+}
+
+/* Sticky header row */
+.taginfotable th {
+  background-color: #606BCB;
+ 
+}
+
+/* Optional: Alternate row colors */
+.taginfotable tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.taginfotable tr:hover {
+  background-color: #f2f2f2;
+}
+.taginfotable tbody tr input{
+  width: '100%';
+  border: none;
+  margin: 0;
+  padding: 0
+}
+
+.tableActionCell {
+  width: 1px;
+  padding: 7px 8px 7px 0;
+  white-space: nowrap;
+}
