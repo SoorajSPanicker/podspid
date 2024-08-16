@@ -178,22 +178,22 @@ function Linelist({ isSideNavOpen, alllines }) {
     const handleExport = () => {
         // Define the headers for the equipment list with actual field names
         const headers = [
-            'tag', 'fluidCode' , 'lineId' , 'medium' , 'lineSizeIn' , 'lineSizeNb' ,'pipingSpec', 'insType' , 'insThickness' , 'heatTrace' , 'lineFrom' , 'lineTo'  , 'maxOpPress' , 'maxOpTemp' , 'dsgnPress' , 'minDsgnTemp' , 'maxDsgnTemp' , 'testPress' ,'testMedium' , 'testMediumPhase' , 'massFlow' , 'volFlow' , 'density' , 'velocity' , 'paintSystem' , 'ndtGroup' ,'chemCleaning' , 'pwht'
+            'tag', 'fluidCode', 'lineId', 'medium', 'lineSizeIn', 'lineSizeNb', 'pipingSpec', 'insType', 'insThickness', 'heatTrace', 'lineFrom', 'lineTo', 'maxOpPress', 'maxOpTemp', 'dsgnPress', 'minDsgnTemp', 'maxDsgnTemp', 'testPress', 'testMedium', 'testMediumPhase', 'massFlow', 'volFlow', 'density', 'velocity', 'paintSystem', 'ndtGroup', 'chemCleaning', 'pwht'
         ];
-    
+
         // Combine headers with the actual equipment list data if it exists
         const dataToExport = alllines.length > 0 ? alllines : [];
-    
+
         // Convert data to a sheet
         const ws = XLSX.utils.json_to_sheet(dataToExport, { header: headers });
-    
+
         // Create a new workbook and append the sheet
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Line List');
-    
+
         // Write the workbook to an array buffer
         const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    
+
         // Save the file using FileSaver
         saveAs(new Blob([wbout], { type: 'application/octet-stream' }), 'LineList.xlsx');
     };
@@ -207,29 +207,33 @@ function Linelist({ isSideNavOpen, alllines }) {
     // };
 
 
-// const handleExport = () => {
-//     // Define the headings of your table
-//     const headings = ["Column1", "Column2", "Column3"]; // Replace with your actual headings
+    // const handleExport = () => {
+    //     // Define the headings of your table
+    //     const headings = ["Column1", "Column2", "Column3"]; // Replace with your actual headings
 
-//     // Check if the alllines array is empty
-//     const dataToExport = alllines.length === 0 ? [headings] : [headings, ...alllines];
+    //     // Check if the alllines array is empty
+    //     const dataToExport = alllines.length === 0 ? [headings] : [headings, ...alllines];
 
-//     // Convert the data to a sheet
-//     const ws = XLSX.utils.json_to_sheet(dataToExport, { skipHeader: true });
-//     const wb = XLSX.utils.book_new();
-//     XLSX.utils.book_append_sheet(wb, ws, 'Line List');
+    //     // Convert the data to a sheet
+    //     const ws = XLSX.utils.json_to_sheet(dataToExport, { skipHeader: true });
+    //     const wb = XLSX.utils.book_new();
+    //     XLSX.utils.book_append_sheet(wb, ws, 'Line List');
 
-//     // Write the workbook and trigger the download
-//     const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-//     saveAs(new Blob([wbout], { type: 'application/octet-stream' }), 'LineList.xlsx');
-// };
-const handleSearchline = (e) => {
-    setSearchQuery(e.target.value);
-  };
+    //     // Write the workbook and trigger the download
+    //     const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    //     saveAs(new Blob([wbout], { type: 'application/octet-stream' }), 'LineList.xlsx');
+    // };
+    const handleSearchline = (e) => {
+        setSearchQuery(e.target.value);
+    };
 
-  const filteredLineList = alllines.filter(line =>
-    line.tag.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+    const filteredLineList = alllines.filter(line =>
+        line.tag.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const handletagselect = (data) => {
+        window.api.send('tag-doc-con', data)
+    }
 
     return (
 
@@ -287,8 +291,8 @@ const handleSearchline = (e) => {
                         </thead>
                         <tbody>
                             {filteredLineList.map((line, index) => (
-                                <tr key={index} style={{ color: 'black' }}>
-                                    <td style={{ backgroundColor: '#f0f0f0' }}>{line.tag}</td>
+                                <tr key={index} style={{ color: 'black',cursor:'pointer' }}>
+                                    <td onClick={() => handletagselect(line.tag)} style={{ backgroundColor: '#f0f0f0' }}>{line.tag}</td>
                                     <td >{editedRowIndex === index ? <input onChange={e => setFluidCode1(e.target.value)} type="text" value={fluidCode1} /> : line.fluidCode}</td>
                                     <td >{editedRowIndex === index ? <input onChange={e => setlineId1(e.target.value)} type="text" value={lineId1} /> : line.lineId}</td>
                                     <td>{editedRowIndex === index ? <input onChange={e => setmedium1(e.target.value)} type="text" value={medium1} /> : line.medium}</td>

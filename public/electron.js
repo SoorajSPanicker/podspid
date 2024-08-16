@@ -29,7 +29,7 @@ function createMainWindow() {
         },
     });
 
-    mainWindow.webContents.openDevTools();
+    // mainWindow.webContents.openDevTools();
 
     const startUrl = url.format({
         pathname: path.join(__dirname, '../build/index.html'),
@@ -290,8 +290,8 @@ function initializeProjectDatabase(databasePath, mainWindow) {
 
         const userDefinedFields = Array.from({ length: 50 }, (_, i) => ({
             taginfo: `Taginfo${i + 1}`,
-            taginfounit: `Taginfounit${i + 1}`,   
-            tagcheck:`checked`  
+            taginfounit: `Taginfounit${i + 1}`,
+            tagcheck: `unchecked`
         }));
 
         const runQuery = (query, params = []) => {
@@ -320,12 +320,12 @@ function initializeProjectDatabase(databasePath, mainWindow) {
             let allStatuses = await selectQuery("SELECT * FROM CommentStatus");
             mainWindow.webContents.send('all-comments-fetched', allStatuses);
 
-            for (let { taginfo, taginfounit ,tagcheck } of userDefinedFields) {
+            for (let { taginfo, taginfounit, tagcheck } of userDefinedFields) {
 
                 // Insert into UserTagInfoFieldUnits table
                 await runQuery(
                     `INSERT OR IGNORE INTO UserTagInfoFieldUnits (field, unit, statuscheck) VALUES (?, ?, ?)`,
-                    [taginfo, taginfounit,tagcheck]
+                    [taginfo, taginfounit, tagcheck]
                 );
             }
 
@@ -741,12 +741,31 @@ app.whenReady().then(() => {
                         console.log('Data in the LineList table:', rows);
                         mainWindow.webContents.send('all-line-fetched', rows);
                     });
-
+                    projectDb.all("SELECT * FROM Tags", (err, rows) => {
+                        if (err) {
+                            console.error('Error fetching data from Tree table:', err.message);
+                            return;
+                        }
+        
+                        console.log('Data in the Tag table:', rows);
+                        mainWindow.webContents.send('all-tags-fetched', rows);
+                    });
+        
+        
+                    projectDb.all("SELECT * FROM TagInfo", (err, rows) => {
+                        if (err) {
+                            console.error('Error fetching data from Tree table:', err.message);
+                            return;
+                        }
+        
+                        console.log('Data in the TagInfo table:', rows);
+                        mainWindow.webContents.send('all-taginfo-fetched', rows);
+                    });
                 });
 
             } else if (data.tagType === 'Equipment') {
                 console.log("Equipement");
-                projectDb.run('INSERT INTO EquipmentList (tagId,tag) VALUES (?)', [tagId, data.tagNumber], function (err) {
+                projectDb.run('INSERT INTO EquipmentList (tagId,tag) VALUES (?,?)', [tagId, data.tagNumber], function (err) {
                     if (err) {
                         console.error('Error inserting data into EquipmentList table:', err.message);
                         return;
@@ -761,35 +780,51 @@ app.whenReady().then(() => {
                         console.log('Data in the EquipmentList table:', rows);
                         mainWindow.webContents.send('all-equ-fetched', rows);
                     });
-
+                    projectDb.all("SELECT * FROM Tags", (err, rows) => {
+                        if (err) {
+                            console.error('Error fetching data from Tree table:', err.message);
+                            return;
+                        }
+        
+                        console.log('Data in the Tag table:', rows);
+                        mainWindow.webContents.send('all-tags-fetched', rows);
+                    });
+        
+        
+                    projectDb.all("SELECT * FROM TagInfo", (err, rows) => {
+                        if (err) {
+                            console.error('Error fetching data from Tree table:', err.message);
+                            return;
+                        }
+        
+                        console.log('Data in the TagInfo table:', rows);
+                        mainWindow.webContents.send('all-taginfo-fetched', rows);
+                    });
                 });
 
             } else {
                 console.error('Invalid tag type:', data.tagtype);
             }
+            // projectDb.all("SELECT * FROM Tags", (err, rows) => {
+            //     if (err) {
+            //         console.error('Error fetching data from Tree table:', err.message);
+            //         return;
+            //     }
+
+            //     console.log('Data in the Tag table:', rows);
+            //     mainWindow.webContents.send('all-tags-fetched', rows);
+            // });
 
 
+            // projectDb.all("SELECT * FROM TagInfo", (err, rows) => {
+            //     if (err) {
+            //         console.error('Error fetching data from Tree table:', err.message);
+            //         return;
+            //     }
 
-            projectDb.all("SELECT * FROM Tags", (err, rows) => {
-                if (err) {
-                    console.error('Error fetching data from Tree table:', err.message);
-                    return;
-                }
-
-                console.log('Data in the Tag table:', rows);
-                mainWindow.webContents.send('all-tags-fetched', rows);
-            });
-
-
-            projectDb.all("SELECT * FROM TagInfo", (err, rows) => {
-                if (err) {
-                    console.error('Error fetching data from Tree table:', err.message);
-                    return;
-                }
-
-                console.log('Data in the TagInfo table:', rows);
-                mainWindow.webContents.send('all-taginfo-fetched', rows);
-            });
+            //     console.log('Data in the TagInfo table:', rows);
+            //     mainWindow.webContents.send('all-taginfo-fetched', rows);
+            // });
         });
     })
 
@@ -1086,9 +1121,6 @@ app.whenReady().then(() => {
         });
     });
 
-
-
-
     ipcMain.on('fetch-sin-ele', (event, elementId) => {
         console.log("Received request to search document by number");
         if (!databasePath) {
@@ -1115,6 +1147,81 @@ app.whenReady().then(() => {
                     mainWindow.webContents.send('sin-ele-fetched', row);
                 } else {
                     console.error('Element not found in Elements table');
+                    // event.sender.send('doc-found', { success: false, message: 'File not found in Documents folder' });
+                }
+                // } 
+                // else {
+                //     console.error('Document not found in database');
+                //     event.sender.send('doc-found', { success: false, message: 'Document not found in database' });
+                // }
+            });
+        });
+    });
+
+
+    ipcMain.on('tag-doc-con', (event, tagNumber) => {
+        console.log("Received request to search filename by tag");
+        if (!databasePath) {
+            console.error('Project database path not available.');
+            return;
+        }
+
+        const projectDb = new sqlite3.Database(databasePath, (err) => {
+            if (err) {
+                console.error('Error opening project database:', err.message);
+                return;
+            }
+
+            projectDb.all('SELECT * FROM Elements WHERE tagNumber = ?', [tagNumber], (err, row) => {
+                if (err) {
+                    console.error('Error querying the database:', err.message);
+                    // event.sender.send('doc-found', { success: false, message: 'Error querying the database' });
+                    return;
+                }
+
+                if (row) {
+                    console.log(`Element details: ${row}`);
+                    // event.sender.send('doc-found', { success: true, filePath: filePath });
+                    mainWindow.webContents.send('con-doc-tag', row);
+                } else {
+                    console.error('Element not found in Elements table');
+                    // event.sender.send('doc-found', { success: false, message: 'File not found in Documents folder' });
+                }
+                // } 
+                // else {
+                //     console.error('Document not found in database');
+                //     event.sender.send('doc-found', { success: false, message: 'Document not found in database' });
+                // }
+            });
+        });
+    });
+
+    ipcMain.on('tag-doc-det', (event, filename) => {
+        console.log("Received request to search document by filename");
+        if (!databasePath) {
+            console.error('Project database path not available.');
+            return;
+        }
+
+        const projectDb = new sqlite3.Database(databasePath, (err) => {
+            if (err) {
+                console.error('Error opening project database:', err.message);
+                return;
+            }
+
+            projectDb.all('SELECT * FROM Documents WHERE filename = ?', [filename], (err, row) => {
+                if (err) {
+                    console.error('Error querying the database:', err.message);
+                    // event.sender.send('doc-found', { success: false, message: 'Error querying the database' });
+                    return;
+                }
+
+                if (row) {
+                    console.log(`Documents details: ${row}`);
+                    // event.sender.send('doc-found', { success: true, filePath: filePath });
+                    mainWindow.webContents.send('det-doc-tag', row);
+                } else {
+                    console.error('Documents not found in Documents table');
                     // event.sender.send('doc-found', { success: false, message: 'File not found in Documents folder' });
                 }
                 // } 
@@ -1688,6 +1795,49 @@ app.whenReady().then(() => {
 
                 mainWindow.webContents.send('all-comments-fetched', rows);
             });
+        });
+    });
+
+    ipcMain.on('update-check-sta', (event, updatedData) => {
+        console.log("Received update message");
+        if (!databasePath) {
+            console.error('Project database path not available.');
+            return;
+        }
+        console.log(updatedData);
+        // Extracting updated data
+        const { id, statuscheck } = updatedData;
+
+        // Open the project's database
+        const projectDb = new sqlite3.Database(databasePath, (err) => {
+            if (err) {
+                console.error('Error opening project database:', err.message);
+                return;
+            }
+
+            // Update the record in the database
+            projectDb.run('UPDATE UserTagInfoFieldUnits SET statuscheck = ? WHERE id = ?',
+                [statuscheck,id],
+                (err) => {
+                    if (err) {
+                        console.error('Error updating UserTagInfoFieldUnits table:', err.message);
+                        return;
+                    }
+
+                    console.log('UserTagInfoFieldUnits table updated successfully.');
+                    // Fetch updated data from the UserTagInfoFieldUnits table
+                    projectDb.all("SELECT * FROM UserTagInfoFieldUnits", (err, rows) => {
+                        if (err) {
+                            console.error('Error fetching data from UserTagInfoFieldUnits table:', err.message);
+                            return;
+                        }
+
+                        mainWindow.webContents.send('all-fields-user-defined', rows);
+                    });
+                }
+            );
+
+
         });
     });
 

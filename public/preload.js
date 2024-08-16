@@ -62,7 +62,7 @@ contextBridge.exposeInMainWorld('api', {
             'add-commentdetails-table', 'remove-commentstatus-table', 'editCommentStatus', 'import-tag-list',
             'delete-all-tags', 'update-comment-table', 'update-tag-table', 'update-doc-table',
             'insert-master-table', 'check-master', 'fetch-master-doc', 'copy-to-master', 'backup-masdoc',
-            'update-masdoc', 'save-svg', 'check-file-exists', 'load-svg', 'read-svg-file','import-taginfo-list','save-layer','show-doc-area','is-ele-tag','save-areatag-rel','saveUserDefinedFields','add-taginfoname-table','delete-taginfoname-row'
+            'update-masdoc', 'save-svg', 'check-file-exists', 'load-svg', 'read-svg-file','import-taginfo-list','save-layer','show-doc-area','is-ele-tag','save-areatag-rel','saveUserDefinedFields','add-taginfoname-table','delete-taginfoname-row','tag-doc-con','tag-doc-det','update-check-sta'
         ];
         if (validChannels.includes(channel)) {
             ipcRenderer.send(channel, data);
@@ -81,7 +81,7 @@ contextBridge.exposeInMainWorld('api', {
             'element-tag-is', 'flag-tag-is', 'ele-tag-sel', 'type-tag-ele', 'equ-type-details',
             'line-type-details', 'sel-flag-ele', 'delete-project-response', 'delete-all-project-response',
             'ele-flag-out', 'all-comments', 'all-comments-fetched', 'master-doc-fetched', 'master-checked',
-            'store-master-fetched', 'read-svg-file-response','save-data-response','all-layers-fetched','doc-area-fetched','tag-ele-is','areatag-rel','all-fields-user-defined','all-taginfoname-fetched'
+            'store-master-fetched', 'read-svg-file-response','save-data-response','all-layers-fetched','doc-area-fetched','tag-ele-is','areatag-rel','all-fields-user-defined','all-taginfoname-fetched','con-doc-tag','det-doc-tag'
         ];
         if (validChannels.includes(channel)) {
             // Deliberately strip event as it includes sender

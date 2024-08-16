@@ -19,7 +19,7 @@
 }
 
 div#spidEditPane {
-    position: absolute;
+    position: fixed;
     top: 0;
     right: 0;
     background-color: #181818;
@@ -44,7 +44,8 @@ i.svgElem {
     padding: 5px;
     width: 28px;
     border-radius: 5px;
-    color:white;
+    color: white;
+    
     /* background-color: red; */
 }
 
@@ -76,36 +77,36 @@ label#spidSvgElemLnkOr {
     margin: 0;
     list-style: none;
     z-index: 100;
-  }
-  
-  .context-menu li {
+}
+
+.context-menu li {
     padding: 5px 10px;
     cursor: pointer;
-  }
-  
-  .context-menu li:hover {
-    background-color: #f5f5f5;
-  }
+}
 
-  /* BOTTOM EDIT TAB */
-.bet{
+.context-menu li:hover {
+    background-color: #f5f5f5;
+}
+
+/* BOTTOM EDIT TAB */
+.bet {
     position: fixed;
     bottom: 20px;
     right: 0;
     /* left:0; */
-    background-color:#181818 ;
+    background-color: #181818;
     display: flex;
     justify-content: center;
     align-items: center;
-  
-    }
 
-.tmt{
+}
+
+.tmt {
     position: fixed;
-    top:25px;
+    top: 25px;
     right: 0;
     /* left:0; */
-    background-color:#181818 ;
+    background-color: #181818;
     display: flex;
     justify-content: center;
     align-items: center;

@@ -101,6 +101,7 @@ function Home() {
   const [generalTagInfoFields, setGeneralTagInfoFields] = useState([])
   const [sindocid, setsindocid] = useState('')
   const [taginfohead, settaginfohead] = useState([])
+  const [tagdocsel, settagdocsel] = useState([])
 
   useEffect(() => {
     // Request data from main process when component mounts
@@ -148,6 +149,10 @@ function Home() {
   }, []);
 
   useEffect(() => {
+    console.log(alltags);
+  }, [alltags])
+
+  useEffect(() => {
     window.api.receive('all-tags-fetched', (data) => {
       console.log("Received data from main process:", data);
       setAlltags(data);
@@ -179,6 +184,10 @@ function Home() {
   useEffect(() => {
     console.log(alllines);
   }, [alllines])
+
+  useEffect(() => {
+    console.log(allEquipementList);
+  }, [allEquipementList])
 
   useEffect(() => {
     window.api.receive('all-equ-fetched', (data) => {
@@ -307,7 +316,9 @@ function Home() {
         console.log(masterid);
         window.api.send('fetch-sin-doc', masterid);
         window.api.send('fetch-sin-docdetails', masterid)
-        setIsDiv1Visible(!isDiv1Visible);
+        // setIsDiv1Visible(!isDiv1Visible);
+        setIsDiv1Visible(false)
+        setlinelist(false)
         setshowcanvas(true)
         setShowmasConfirm(true)
       }
@@ -319,7 +330,9 @@ function Home() {
         window.api.send('fetch-sin-doc', masterid);
         window.api.send('fetch-sin-docdetails', masterid)
         window.api.send('fetch-master-doc', masterid)
-        setIsDiv1Visible(!isDiv1Visible);
+        // setIsDiv1Visible(!isDiv1Visible);
+        setIsDiv1Visible(false)
+        setlinelist(false)
         setshowcanvas(true)
       }
     }
@@ -689,6 +702,7 @@ function Home() {
     setcomstareview(false)
     settaginforeview(false)
     settaginfoedit(false)
+    setinfosubopt(false)
   }
 
   const handleequopt = () => {
@@ -710,6 +724,7 @@ function Home() {
     setcomstareview(false)
     settaginforeview(false)
     settaginfoedit(false)
+    setinfosubopt(false)
   }
 
 
@@ -732,6 +747,7 @@ function Home() {
     setcomstareview(false)
     settaginforeview(false)
     settaginfoedit(false)
+    setinfosubopt(false)
   }
 
   const handletagsubopt = () => {
@@ -753,6 +769,7 @@ function Home() {
     setcomstareview(false)
     settaginforeview(false)
     settaginfoedit(false)
+    setinfosubopt(false)
   }
 
   const handletagoptrev = () => {
@@ -773,6 +790,7 @@ function Home() {
     setcomstareview(false)
     settaginforeview(false)
     settaginfoedit(false)
+    setinfosubopt(false)
   }
 
   const handletagoptreg = () => {
@@ -794,6 +812,7 @@ function Home() {
     setcomstareview(false)
     settaginforeview(false)
     settaginfoedit(false)
+    setinfosubopt(false)
   }
   const handlearearegister = () => {
     setIsDiv1Visible(false)
@@ -814,6 +833,7 @@ function Home() {
     setcomstareview(false)
     settaginforeview(false)
     settaginfoedit(false)
+    setinfosubopt(false)
   }
   const handledocopt = () => {
     setIsDiv1Visible(false)
@@ -834,6 +854,7 @@ function Home() {
     setcomstareview(false)
     settaginforeview(false)
     settaginfoedit(false)
+    setinfosubopt(false)
   }
 
   const handledocoptreview = () => {
@@ -854,6 +875,7 @@ function Home() {
     setcomstareview(false)
     settaginforeview(false)
     settaginfoedit(false)
+    setinfosubopt(false)
   }
 
   const handledocoptreg = () => {
@@ -874,6 +896,7 @@ function Home() {
     setcomstareview(false)
     settaginforeview(false)
     settaginfoedit(false)
+    setinfosubopt(false)
   }
 
   const handlecomsubopt = () => {
@@ -895,6 +918,7 @@ function Home() {
     setcomstareview(true)
     settaginforeview(false)
     settaginfoedit(false)
+    setinfosubopt(false)
   }
 
   const handlecomoptstatus = () => {
@@ -915,6 +939,7 @@ function Home() {
     setcomstareview(false)
     settaginforeview(false)
     settaginfoedit(false)
+    setinfosubopt(false)
   }
 
   const handlecomoptreg = () => {
@@ -935,6 +960,7 @@ function Home() {
     setcomstareview(false)
     settaginforeview(false)
     settaginfoedit(false)
+    setinfosubopt(false)
   }
 
   const handlecomoptreview = () => {
@@ -955,6 +981,7 @@ function Home() {
     setcomstareview(true)
     settaginforeview(false)
     settaginfoedit(false)
+    setinfosubopt(false)
   }
 
   const handletaginfosubopt = () => {
@@ -999,26 +1026,26 @@ function Home() {
     settaginfoedit(false)
   }
 
-  const handleinfoptedit = () => {
-    setIsDiv1Visible(false)
-    spidallops()
-    settagreview(false)
-    setlinelist(false)
-    setequlist(false)
-    settagreg(false)
-    settagsubopt(false)
-    setdocreview(false)
-    setdocreg(false)
-    setareareg(false)
-    settaginfoopt(false)
-    setcomsubopt(false)
-    setcomreview(false)
-    setcomreg(false)
-    setcomstareview(false)
-    setinfosubopt(true)
-    settaginforeview(false)
-    settaginfoedit(true)
-  }
+  // const handleinfoptedit = () => {
+  //   setIsDiv1Visible(false)
+  //   spidallops()
+  //   settagreview(false)
+  //   setlinelist(false)
+  //   setequlist(false)
+  //   settagreg(false)
+  //   settagsubopt(false)
+  //   setdocreview(false)
+  //   setdocreg(false)
+  //   setareareg(false)
+  //   settaginfoopt(false)
+  //   setcomsubopt(false)
+  //   setcomreview(false)
+  //   setcomreg(false)
+  //   setcomstareview(false)
+  //   setinfosubopt(true)
+  //   settaginforeview(false)
+  //   settaginfoedit(true)
+  // }
 
 
 
@@ -1424,7 +1451,36 @@ function Home() {
   const handleCancelmaster = () => {
     setShowmasConfirm(false)
   }
+  useEffect(() => {
+    console.log(tagdocsel);
+  }, [tagdocsel])
 
+  useEffect(() => {
+    window.api.receive('con-doc-tag', (data) => {
+      const alleles = []
+      console.log(data);
+      window.api.send('tag-doc-det', data[0].filename)
+      data.forEach(ele => {
+        alleles.push(ele.elementId)
+      })
+      settagdocsel(alleles)
+    });
+  }, [])
+
+  useEffect(() => {
+    window.api.receive('det-doc-tag', (data) => {
+      console.log(data);
+      data.forEach(element => {
+        handledocdis(element.number, element.docId)
+      });
+
+    });
+  }, [])
+
+  useEffect(() => {
+    console.log(isDiv1Visible);
+
+  }, [isDiv1Visible])
 
   return (
 
@@ -1456,7 +1512,7 @@ function Home() {
             </div>
             {isinfosubopt && <div>
               <div id='tagsubopt' onClick={handleinfoptrev} style={{ backgroundColor: istaginforeview ? '#928f8ff7' : '' }}>Review</div>
-              <div id='tagsubopt' onClick={handleinfoptedit} style={{ backgroundColor: istaginfoedit ? '#928f8ff7' : '' }}>Tag Info Edit</div>
+              {/* <div id='tagsubopt' onClick={handleinfoptedit} style={{ backgroundColor: istaginfoedit ? '#928f8ff7' : '' }}>Tag Info Edit</div> */}
             </div>}
             <div id="lineListSideLnk" class="sideLnkInactive" onClick={handlelineopt} style={{ backgroundColor: islinelist ? '#5B66CB' : '' }}>
               <i class="fa fa-list-alt sideLnkIcon"></i>
@@ -1521,7 +1577,7 @@ function Home() {
         </div>
 
         {showcanvas &&
-          <Canvas isSideNavOpen={isSideNavOpen} svgcontent={svgcontent} mascontent={mascontent} showcanvas={showcanvas} alltags={alltags} allspids={allspids} projectNo={projectNo} allcomments={allcomments} allareas={allareas} sindocid={sindocid}></Canvas>
+          <Canvas isSideNavOpen={isSideNavOpen} svgcontent={svgcontent} mascontent={mascontent} showcanvas={showcanvas} alltags={alltags} allspids={allspids} projectNo={projectNo} allcomments={allcomments} allareas={allareas} sindocid={sindocid} tagdocsel={tagdocsel}></Canvas>
         }
         {istaginforeview && <Taginfo isSideNavOpen={isSideNavOpen} userTagInfotable={taginfo} generalTagInfoFields={generalTagInfoFields} taginfohead={taginfohead}></Taginfo>}
         {istagreview &&

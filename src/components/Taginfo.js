@@ -18,19 +18,24 @@ function Taginfo({ isSideNavOpen, userTagInfotable = [], generalTagInfoFields = 
     const [maintabledata, setmaintabledata] = useState([])
     // const [selectedcheck, setselectedcheck] = useState([])
     useEffect(() => {
+        console.log(generalTagInfoFields);
         const initialFields = generalTagInfoFields.length > 0
             ? generalTagInfoFields.slice(0, numFields)
             : Array.from({ length: numFields }, (_, index) => ({
                 field: `Field ${index + 1}`,
-                unit: `Unit ${index + 1}`,
+                unit: `Unit ${index + 1}`
             }));
         setDisplayFields(initialFields);
     }, [numFields, generalTagInfoFields]);
 
     useEffect(() => {
         console.log(displayFields);
-    }, [displayFields])
+    }, [setDisplayFields])
 
+    useEffect(() => {
+        console.log(userTagInfotable);
+
+    }, [userTagInfotable])
 
 
     const handleConfirm = () => {
@@ -148,68 +153,35 @@ function Taginfo({ isSideNavOpen, userTagInfotable = [], generalTagInfoFields = 
         settagsettab(true)
     }
 
-    // useEffect(() => {
-    //     console.log(maintabledata);
-    //     maintabledata.forEach(data => {
-    //         console.log(data);
-    //         window.api.send('add-taginfoname-table', data);
-    //     })
-    // }, [maintabledata])
+    const handleshow = (index, isChecked) => {
+        if (isChecked == true) {
+            // const fpush={}
+            // fpush=displayFields[index]
+            // console.log(fpush);
+            console.log(displayFields[index]);
+            console.log(displayFields[index].id);
+            const data = {
+                id: displayFields[index].id,
+                statuscheck: 'checked'
+            }
+            console.log(data);
+            window.api.send('update-check-sta', data)
+        }
+        else {
+            console.log(displayFields[index]);
+            console.log(displayFields[index].id);
+            const data = {
+                id: displayFields[index].id,
+                statuscheck: 'unchecked'
+            }
+            console.log(data);
+            window.api.send('update-check-sta', data)
+        }
 
-    // useEffect(() => {
-    //     console.log(selectedRows);
-    //     const fpush = []
-    //     // Log selected rows' data to the console whenever it changes
-    //     selectedRows.forEach(index => {
-    //         console.log('Selected row data:', displayFields[index]);
-    //         fpush.push(displayFields[index])
-
-    //     });
-    //     console.log(fpush);
-    //     setmaintabledata(fpush)
-    //     // console.log(selectedRows);
-    // }, [selectedRows]);
-
-    const handleshow = (e) => {
-      console.log(e);
-      
-
-        // setSelectedRows((prevSelectedRows) => {
-
-        //     const isSelected = prevSelectedRows.includes(index);
-        //     if (isSelected) {
-        //         // Get the value of the row that is being filtered out
-        //         const rowValue = displayFields[index];
-        //         console.log(rowValue);
-
-        //         // Send the row value to the API before filtering it out
-        //         window.api.send('delete-taginfoname-row', rowValue.id);
-        //         // console.log(prevSelectedRows.filter((row) => row !== index));
-        //         // Remove from selected rows
-        //         return prevSelectedRows.filter((row) => row !== index);
-        //     } else {
-        //         // Add to selected rows
-        //         return [...prevSelectedRows, index];
-        //     }
-        // });
     };
 
     useEffect(() => {
         console.log(taginfohead);
-        // const ipush=[]
-        // if (taginfohead.length > 0) {
-        //     console.log(taginfohead);
-        //     // setSelectedRows(taginfohead)
-        //     taginfohead.forEach(data => {
-        //         // setSelectedRows(data)
-        //         //    handleshow(data.id)
-        //         // console.log(data.id);
-        //         console.log(data.id - 1);
-        //         // handleshow(data.id-1)
-        //         ipush.push(data.id-1)
-        //     })
-        // }
-        // setSelectedRows(ipush)
     }, [taginfohead]);
 
 
@@ -223,15 +195,18 @@ function Taginfo({ isSideNavOpen, userTagInfotable = [], generalTagInfoFields = 
         <div style={{ width: isSideNavOpen ? '83.5%' : '100%', marginLeft: isSideNavOpen ? '260px' : '0', height: '100vh', backgroundColor: 'white', position: 'fixed' }}>
             {istaginfotab && <form>
                 <div className="table-container">
-                    <table className="taginfotable">
+                    <Table className="taginfotable">
                         <thead>
                             <tr>
+                            {/* style={{ border: '1px solid black', padding: '8px' }} */}
                                 <th className="wideHead">Tag</th>
-                                <th className="wideHead">Type</th>
-                                {taginfohead.map(item => (
-                                    <th key={item.id} style={{ border: '1px solid black', padding: '8px' }}>
-                                        {item.field}
-                                    </th>
+                                <th style={{backgroundColor:'#606BCB'}} className="wideHead">Type</th>
+                                {displayFields.map(item => (
+                                    item.statuscheck === 'checked' ? (
+                                        <th style={{backgroundColor:'#606BCB'}} key={item.id} >
+                                            {item.field}
+                                        </th>
+                                    ) : null
                                 ))}
                                 <th>
                                     <i className="fa fa-upload" title="Export" onClick={handleExport}></i>
@@ -241,12 +216,14 @@ function Taginfo({ isSideNavOpen, userTagInfotable = [], generalTagInfoFields = 
 
                             <tr>
                                 <th ></th>
-                                <th></th>
-
-                                {taginfohead.map(item => (
-                                    <th key={item.id} style={{ border: '1px solid black', padding: '8px' }}>
-                                        {item.unit}
-                                    </th>
+                                <th style={{backgroundColor:'#606BCB'}}></th>
+                                {/* style={{ border: '1px solid black', padding: '8px' }} */}
+                                {displayFields.map(item => (
+                                    item.statuscheck === 'checked' ? (
+                                        <th style={{backgroundColor:'#606BCB'}} key={item.id} >
+                                            {item.unit}
+                                        </th>
+                                    ) : null
                                 ))}
                                 <th >
                                     <i onClick={handlesettings} style={{ cursor: 'pointer' }} class="fa-solid fa-gear"></i>
@@ -258,19 +235,20 @@ function Taginfo({ isSideNavOpen, userTagInfotable = [], generalTagInfoFields = 
                             {Array.isArray(userTagInfotable) && userTagInfotable.map((info, index) => (
                                 <tr key={index} style={{ color: 'black' }}>
                                     <td style={{ backgroundColor: '#f0f0f0' }}>{info.tag}</td>
-                                    <td>{info.type}</td>
+                                    <td style={{backgroundColor:'#f0f0f0'}}>{info.type}</td>
                                     {displayFields.slice(0, numFields).map((field, fieldIndex) => (
-                                        <td key={fieldIndex}>
-                                            {editedRowIndex === index ? (
-                                                <input
-                                                    onChange={(e) => handleChange(`taginfo${fieldIndex + 1}`, e.target.value)}
-                                                    type="text"
-                                                    value={editedTagData[`taginfo${fieldIndex + 1}`] || ''}
-                                                />
-                                            ) : (
-                                                info[`taginfo${fieldIndex + 1}`]
-                                            )}
-                                        </td>
+                                        field.statuscheck === 'checked' ? (
+                                            <td style={{backgroundColor:'#f0f0f0'}} key={fieldIndex}>
+                                                {editedRowIndex === index ? (
+                                                    <input
+                                                        onChange={(e) => handleChange(`taginfo${fieldIndex + 1}`, e.target.value)}
+                                                        type="text"
+                                                        value={editedTagData[`taginfo${fieldIndex + 1}`] || ''}
+                                                    />
+                                                ) : (
+                                                    info[`taginfo${fieldIndex + 1}`]
+                                                )}
+                                            </td>) : null
                                     ))}
                                     <td style={{ backgroundColor: '#f0f0f0' }}>
                                         {editedRowIndex === index ? (
@@ -288,10 +266,7 @@ function Taginfo({ isSideNavOpen, userTagInfotable = [], generalTagInfoFields = 
                                 </tr>
                             ))}
                         </tbody>
-
-                    </table>
-
-
+                    </Table>
                 </div>
             </form>}
 
@@ -330,7 +305,10 @@ function Taginfo({ isSideNavOpen, userTagInfotable = [], generalTagInfoFields = 
                                             <i className="fa-solid fa-xmark ms-3" onClick={handleCloseEdit}></i>
                                         </>) : (<><i className="fa-solid fa-pencil" onClick={handleEditUnitField}></i>
                                             <i className="fa-solid fa-trash-can ms-3"></i>
-                                            <input className='ms-2' type="checkbox" id="all" name='alls'  onChange={handleshow} /></>)}
+                                            <input className='ms-2' type="checkbox" id={`checkbox-${index}`}
+                                                name={`checkbox-${index}`}
+                                                checked={field.statuscheck === 'checked'}
+                                                onChange={(e) => handleshow(index, e.target.checked)} /></>)}
                                         {/* checked={taginfohead.some(item => item.id === index + 1)} */}
                                     </></td>
                                 </tr>
@@ -338,8 +316,27 @@ function Taginfo({ isSideNavOpen, userTagInfotable = [], generalTagInfoFields = 
 
                         </tbody>
                     </Table>
+                    <div style={{ bottom: 0, position: 'sticky' }}>
+                        <label htmlFor="numFieldsInput">Number of Fields:</label>
+                        <input
+                            type="number"
+                            id="numFieldsInput"
+                            name="numFieldsInput"
+                            value={numFields}
+                            onChange={handleNumFieldsChange}
+                            min={16}
+                            max={50}
+                        />
+                    </div>
                 </div>
             </form>}
+            {showConfirm && (
+                <DeleteConfirm
+                    message="Are you sure you want to delete?"
+                    onConfirm={handleConfirm}
+                    onCancel={handleCancel}
+                />
+            )}
         </div>
     );
 }

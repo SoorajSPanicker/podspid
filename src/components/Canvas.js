@@ -11,7 +11,7 @@ import CommentStatus from './CommentStatus';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
-function Canvas({ svgcontent, mascontent, showcanvas, alltags, allspids, projectNo, isSideNavOpen, allcomments,allareas, sindocid }) {
+function Canvas({ svgcontent, mascontent, showcanvas, alltags, allspids, projectNo, isSideNavOpen, allcomments, allareas, sindocid, tagdocsel }) {
     const canvasRef = useRef(null);
     let canvas = canvasRef.current;
     const viewRef = useRef(null);
@@ -104,7 +104,9 @@ function Canvas({ svgcontent, mascontent, showcanvas, alltags, allspids, project
     const [areainfo, setareainfo] = useState([])
     const [enableareadraw, setenableareadraw] = useState(false)
     const [savrectangles, setsavRectangles] = useState({});
-
+    const [allowredrect, setallowredrect] = useState(false)
+    const [istagtabdet, settagtabdet] = useState(false)
+    const [istagtypedet, settagtypedet] = useState(false)
     useEffect(() => {
         console.log(flagsconn);
     }, [flagsconn])
@@ -386,6 +388,11 @@ function Canvas({ svgcontent, mascontent, showcanvas, alltags, allspids, project
             settagsselect(data)
         });
     }, []);
+
+    useEffect(() => {
+        console.log(tagsinfo);
+    }, [tagsinfo])
+
     useEffect(() => {
         window.api.receive('info-tag-fetched', (data) => {
             console.log("Received data from main process:", data);
@@ -806,6 +813,7 @@ function Canvas({ svgcontent, mascontent, showcanvas, alltags, allspids, project
     useEffect(() => {
         if (enableareadraw && canvas) {
             dlayerremove()
+            setallowredrect(true)
             console.log("enter useEffect");
             enableareadrawinteraction()
         }
@@ -1595,11 +1603,12 @@ function Canvas({ svgcontent, mascontent, showcanvas, alltags, allspids, project
     }
 
     const enableareadrawinteraction = () => {
-        startDrawingRectangles()
+        setallowredrect(true)
     }
 
     const disableareadrawinteraction = () => {
         // setenableareadraw(false)
+        setallowredrect(false)
     }
 
     const addContextMenuListener = () => {
@@ -2190,56 +2199,75 @@ function Canvas({ svgcontent, mascontent, showcanvas, alltags, allspids, project
         copySelectedItems();
     };
 
+    useEffect(() => {
+        console.log(allowredrect);
+        if (allowredrect == true) {
+            startDrawingRectangles()
+        }
+    }, [allowredrect])
+
 
     const startDrawingRectangles = () => {
-        drawingLayerRef.current = new paper.Layer({ name: 'drawingLayer' });
-        drawingLayerRef.current.activate();
-        const tool = new paper.Tool();
-        let startPoint;
-        let hasDragged = false;
-
-        tool.onMouseDown = function (event) {
-            startPoint = event.point;
-            if (currentRectangleRef.current) {
-                currentRectangleRef.current.remove();
-            }
-            setRectangles({});
-            hasDragged = false;
-        };
-
-        tool.onMouseDrag = function (event) {
-            if (currentRectangleRef.current) {
-                currentRectangleRef.current.remove();
+        console.log(allowredrect);
+        if (allowredrect == true) {
+            console.log(tagdocsel);
+            for (let i = 0; i < tagdocsel.length; i++) {
+                paper.project.getItems({ class: paper.Path, }).forEach(item => {
+                    if (tagdocsel[i] == item._id) {
+                        item.selected = true
+                    }
+                });
             }
 
-            const rectangle = new paper.Path.Rectangle(startPoint, event.point);
-            rectangle.strokeColor = 'red';
-            rectangle.fillColor = new paper.Color(1, 0, 0, 0.3);
-            rectangle.strokeWidth = 2 / paper.view.zoom;
+            drawingLayerRef.current = new paper.Layer({ name: 'drawingLayer' });
+            drawingLayerRef.current.activate();
+            const tool = new paper.Tool();
+            let startPoint;
+            let hasDragged = false;
 
-            drawingLayerRef.current.addChild(rectangle);
-            currentRectangleRef.current = rectangle;
-            hasDragged = true;
-        };
-
-        tool.onMouseUp = function (event) {
-            if (currentRectangleRef.current) {
-                if (hasDragged) {
-                    const bounds = currentRectangleRef.current.bounds;
-                    setRectangles({
-                        topLeft: bounds.topLeft,
-                        bottomRight: bounds.bottomRight,
-                        x: bounds.topLeft.x,
-                        y: bounds.topLeft.y,
-                        width: bounds.width,
-                        height: bounds.height
-                    });
-                } else {
-                    // Mouse was clicked without dragging, clear the rectangles
-                    setRectangles({});
+            tool.onMouseDown = function (event) {
+                startPoint = event.point;
+                if (currentRectangleRef.current) {
+                    currentRectangleRef.current.remove();
                 }
-            }
-        };
+                setRectangles({});
+                hasDragged = false;
+            };
+
+            tool.onMouseDrag = function (event) {
+                if (currentRectangleRef.current) {
+                    currentRectangleRef.current.remove();
+                }
+
+                const rectangle = new paper.Path.Rectangle(startPoint, event.point);
+                rectangle.strokeColor = 'red';
+                rectangle.fillColor = new paper.Color(1, 0, 0, 0.3);
+                rectangle.strokeWidth = 2 / paper.view.zoom;
+
+                drawingLayerRef.current.addChild(rectangle);
+                currentRectangleRef.current = rectangle;
+                hasDragged = true;
+            };
+
+            tool.onMouseUp = function (event) {
+                if (currentRectangleRef.current) {
+                    if (hasDragged) {
+                        const bounds = currentRectangleRef.current.bounds;
+                        setRectangles({
+                            topLeft: bounds.topLeft,
+                            bottomRight: bounds.bottomRight,
+                            x: bounds.topLeft.x,
+                            y: bounds.topLeft.y,
+                            width: bounds.width,
+                            height: bounds.height
+                        });
+                    } else {
+                        // Mouse was clicked without dragging, clear the rectangles
+                        setRectangles({});
+                    }
+                }
+            };
+        }
     };
 
     const handlesavelayer = async (e) => {
@@ -2283,6 +2311,7 @@ function Canvas({ svgcontent, mascontent, showcanvas, alltags, allspids, project
     }
 
     const loadAndDrawRectangle = (savedDataArray) => {
+        // drawingLayerRef.current = new paper.Layer({ name: 'drawingLayer' });
         if (!Array.isArray(savedDataArray) || savedDataArray.length === 0 || !drawingLayerRef.current) return;
 
         drawingLayerRef.current.removeChildren();
@@ -2321,6 +2350,35 @@ function Canvas({ svgcontent, mascontent, showcanvas, alltags, allspids, project
         // setSindocid(savedDataArray[0].docId); 
         // Assuming all rectangles belong to the same document
     };
+
+    // useEffect(()=>{
+    //     console.log(tagdocsel);
+    //     for (let i = 0; i < tagdocsel.length; i++) {
+    //         paper.project.getItems({ class: paper.Path, }).forEach(item => {
+    //             if (tagdocsel[i] == item._id) {
+    //                 item.selected = true
+    //             }
+    //         });
+    //     }
+    // },[tagdocsel])
+
+    useEffect(() => {
+        console.log(istagtabdet);
+    }, [istagtabdet])
+
+    useEffect(() => {
+        console.log(istagtypedet);
+    }, [istagtypedet])
+
+    const handletagtabdet = () => {
+        settagtabdet(true)
+        settagtabdet(false)
+    }
+
+    const handletagtypedet = () => {
+        settagtypedet(true)
+        settagtabdet(false)
+    }
 
     return (
         <div>
@@ -2369,8 +2427,41 @@ function Canvas({ svgcontent, mascontent, showcanvas, alltags, allspids, project
 
             {taginfoshow && <div className='right pb-5' id='spidEditPane' style={{ height: '100%', width: '200px', backgroundColor: 'black' }}>
                 {/* <div style={{ backgroundColor: 'white' }} className='btn' >Close</div> */}
-                <button className='btn btn-light' onClick={handletaginfoClose}><i className="fa-solid fa-xmark"></i></button>
-                {tagsinfo && <div style={{ color: 'white' }}>
+                <button className='btn btn-light' onClick={handletaginfoClose}><i className="fa-solid fa-xmark mx-2"></i></button>
+                {/* {tagsinfo && <div style={{ color: 'white' }}>
+                    <p>Tag Information</p>
+                    {Object.entries(tagsinfo).map(([key, value]) => (
+
+                        <li key={key}>
+                            <strong>{key}:</strong> {value}
+                        </li>
+                    ))}
+
+                </div>} */}
+                {equlist && Object.keys(equlist).length > 0 && (
+                    <div style={{ color: 'white' }}>
+                        <p>Equipment Info</p>
+                        {Object.entries(equlist).map(([key, value]) => (
+                            <li key={key} style={{ textAlign: 'left', paddingLeft: 0, marginLeft: 0, listStylePosition: 'inside' }}>
+                                <strong>{key}:</strong> {value}
+                            </li>
+                        ))}
+                    </div>
+                )}
+                {linelist && Object.keys(linelist).length > 0 && (
+                    <div style={{ color: 'white' }}>
+                        <p>Line Info</p>
+                        {Object.entries(linelist).map(([key, value]) => (
+                            <li key={key} style={{ textAlign: 'left', paddingLeft: 0, marginLeft: 0, listStylePosition: 'inside' }}>
+                                <strong>{key}:</strong> {value}
+                            </li>
+                        ))}
+                    </div>
+                )}
+
+                {/* <p className='btn btn-light' onClick={handletagtabdet}>Tag Table Info</p>
+                <p className='btn btn-light' onClick={handletagtypedet}>Tag Type Info</p>
+                {istagtabdet && tagsinfo && Object.keys(tagsinfo).length > 0 &&<div style={{ color: 'white' }}>
                     <p>Tag Information</p>
                     {Object.entries(tagsinfo).map(([key, value]) => (
 
@@ -2380,7 +2471,7 @@ function Canvas({ svgcontent, mascontent, showcanvas, alltags, allspids, project
                     ))}
 
                 </div>}
-                {equlist && Object.keys(equlist).length > 0 && <div style={{ color: 'white' }}>
+                {istagtypedet && equlist && Object.keys(equlist).length > 0 && <div style={{ color: 'white' }}>
                     <p>Equipment Info</p>
                     {Object.entries(equlist).map(([key, value]) => (
                         <li key={key}>
@@ -2388,14 +2479,14 @@ function Canvas({ svgcontent, mascontent, showcanvas, alltags, allspids, project
                         </li>
                     ))}
                 </div>}
-                {linelist && Object.keys(linelist).length > 0 && <div style={{ color: 'white' }}>
+                {istagtypedet && linelist && Object.keys(linelist).length > 0 && <div style={{ color: 'white' }}>
                     <p>Line Info</p>
                     {Object.entries(linelist).map(([key, value]) => (
                         <li key={key}>
                             <strong>{key}:</strong> {value}
                         </li>
                     ))}
-                </div>}
+                </div>} */}
             </div>}
 
             {commentinfotable && <div className='right' id='spidEditPane' style={{ height: '100%', width: '200px', backgroundColor: 'black' }}>
