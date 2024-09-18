@@ -5,6 +5,10 @@ const path = require('path');
 const sqlite3 = require('sqlite3').verbose(); // SQLite3 library for database operations
 const { v4: uuidv4 } = require('uuid');
 const xlsx = require('xlsx');
+const { exec } = require('child_process');
+// const dxfConverter = require('dxf-to-svg'); 
+const dxf = require('dxf')
+const net = require('net'); // Import net module for named pipes
 
 let mainWindow;
 let db;
@@ -13,6 +17,9 @@ let projectdb
 let projectdBPath;
 let databasePath
 let projectPath
+const PIPE_NAME = '\\\\.\\pipe\\ElectronAutoCADPipe';
+let pipeServer;
+let activeConnection;
 
 function createMainWindow() {
     mainWindow = new BrowserWindow({
@@ -21,25 +28,19 @@ function createMainWindow() {
         height: 800,
         minWidth: 840,
         minHeight: 600,
-        // maxHeight:800, 
         webPreferences: {
             contextIsolation: true,
             nodeIntegration: true,
             preload: path.join(__dirname, 'preload.js'),
         },
     });
-
-    // mainWindow.webContents.openDevTools();
-
+    mainWindow.webContents.openDevTools();
     const startUrl = url.format({
         pathname: path.join(__dirname, '../build/index.html'),
         protocol: 'file',
     });
-
     mainWindow.loadURL(startUrl);
-
 }
-
 
 function deleteprojectdb() {
     const dbPath = path.join(app.getPath('userData'), 'project.db');
@@ -104,6 +105,38 @@ function deleteProjectDetails(projectNumber) {
     });
 }
 
+function dxfToSvg(parsed) {
+    let svg = '<svg xmlns="http://www.w3.org/2000/svg">';
+
+    console.log('Parsed entities:', parsed.entities);
+
+    parsed.entities.forEach((entity, index) => {
+        console.log('Processing entity ${index}:, entity');
+
+        if (entity.type === 'LINE') {
+            if (entity.start && entity.end &&
+                typeof entity.start.x !== 'undefined' && typeof entity.start.y !== 'undefined' &&
+                typeof entity.end.x !== 'undefined' && typeof entity.end.y !== 'undefined') {
+                svg += `<line x1="${entity.start.x}" y1="${entity.start.y}" x2="${entity.end.x}" y2="${entity.end.y}" stroke="black" />`;
+            } else {
+                console.log('Skipping invalid LINE entity at index ${index}');
+            }
+        } else if (entity.type === 'CIRCLE') {
+            if (entity.center && typeof entity.center.x !== 'undefined' &&
+                typeof entity.center.y !== 'undefined' && typeof entity.radius !== 'undefined') {
+                svg += `<circle cx="${entity.center.x}" cy="${entity.center.y}" r="${entity.radius}" stroke="black" fill="none" />`;
+            } else {
+                console.log('Skipping invalid CIRCLE entity at index ${index}');
+            }
+        } else {
+            console.log('Unsupported entity type: ${entity.type} at index ${index}');
+        }
+    });
+
+    svg += '</svg>';
+    return svg;
+}
+
 function deleteAllProjectDetails() {
     // Check if the projectdb is initialized
     if (!projectdb) {
@@ -131,25 +164,23 @@ function deleteAllProjectDetails() {
 
 function createProjectDatabase() {
     const dbPath = path.join(app.getPath('userData'), 'project.db');
-    projectdBPath = dbPath
+    projectdBPath = dbPath;
     projectdb = new sqlite3.Database(dbPath, (err) => {
         if (err) {
             console.error('Error opening database:', err.message);
         } else {
             console.log('Connected to the database.', dbPath);
-            // Create tables if they don't exist
             projectdb.run(`CREATE TABLE IF NOT EXISTS projectdetails (
-                                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                 projectId TEXT,
-                                 projectNumber TEXT,
-                                projectName TEXT,
-                                 projectDescription TEXT,
-                                 projectPath TEXT,
-                                 TokenNumber TEXT
-                             )`);
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                projectId TEXT,
+                projectNumber TEXT,
+                projectName TEXT,
+                projectDescription TEXT,
+                projectPath TEXT,
+                TokenNumber TEXT
+            )`);
         }
     });
-
 }
 
 // Function to create or connect to the database in the specified folder
@@ -166,7 +197,8 @@ function createDatabase() {
             console.log('Connected to the database.', dbPath);
             db.run("CREATE TABLE IF NOT EXISTS Tags ( tagId TEXT,tagNumber TEXT, tagName TEXT, tagType TEXT, PRIMARY KEY(tagId))");
             db.run("CREATE TABLE IF NOT EXISTS Flags ( flagId TEXT,elementId TEXT, parentDoc TEXT, connectDoc TEXT , connectFlag TEXT , adjTag TEXT)");
-            db.run('CREATE TABLE IF NOT EXISTS Documents (docId TEXT,number TEXT UNIQUE, title TEXT, descr TEXT, type TEXT, filename TEXT, PRIMARY KEY(docId))')
+            db.run('CREATE TABLE IF NOT EXISTS Documents (docId TEXT,number TEXT UNIQUE, title TEXT, descr TEXT, type TEXT, PRIMARY KEY(docId))')
+            db.run('CREATE TABLE IF NOT EXISTS Files (docId TEXT,fileId TEXT,filename TEXT,PRIMARY KEY(fileId))')
             db.run('CREATE TABLE IF NOT EXISTS Elements (elementId TEXT,tagNumber TEXT, filename TEXT)')
             db.run('CREATE TABLE IF NOT EXISTS LineList (tagId TEXT,tag TEXT, fluidCode TEXT, lineId TEXT, medium TEXT, lineSizeIn REAL, lineSizeNb REAL,'
                 + 'pipingSpec TEXT, insType TEXT, insThickness TEXT, heatTrace TEXT, lineFrom TEXT, lineTo TEXT, pnid TEXT, pipingIso TEXT,'
@@ -339,6 +371,130 @@ function initializeProjectDatabase(databasePath, mainWindow) {
     });
 }
 
+function startNamedPipeServer() {
+    pipeServer = net.createServer((stream) => {
+        console.log('AutoCAD plugin connected');
+        activeConnection = stream;
+        
+        let dataBuffer = '';
+        
+        stream.on('data', (data) => {
+            dataBuffer += data.toString();
+            if (dataBuffer.includes('\n')) {
+                const messages = dataBuffer.split('\n');
+                dataBuffer = messages.pop();
+                
+                messages.forEach(message => {
+                    message = message.trim();
+                    console.log('Received message:', message);
+                    
+                    if (message === 'GET_PROJECT_DETAILS') {
+                        projectdb.all('SELECT * FROM projectdetails', (err, rows) => {
+                            if (err) {
+                                console.error('Error fetching data:', err.message);
+                                stream.write(JSON.stringify({ error: err.message }) + '\n');
+                            } else {
+                                console.log('Sending project details:', rows);
+                                stream.write(JSON.stringify(rows) + '\n');
+                            }
+                        });
+                    } else if (message === 'RECEIVED') {
+                        console.log('AutoCAD plugin acknowledged receipt of data');
+                    } else if (message.startsWith('SELECTED_PROJECT_NUMBER:')) {
+                        const projectNumber = message.split(':')[1];
+                        console.log('Selected Project Number:', projectNumber);
+                        mainWindow.webContents.send('project-selected', projectNumber);
+                        ipcMain.emit('open-project', null, projectNumber);
+                    } else if (message.startsWith('SELECTED_FILE_ID:')) {
+                        const fileId = message.split(':')[1];
+                        console.log('Selected File ID:', fileId);
+                        sendFileToAutoCAD(fileId);
+                    }
+                });
+            }
+        });
+        
+        stream.on('end', () => {
+            console.log('AutoCAD plugin disconnected');
+            activeConnection = null;
+        });
+
+        stream.on('error', (err) => {
+            console.error('Stream error:', err);
+            activeConnection = null;
+        });
+    });
+    
+    pipeServer.on('error', (err) => {
+        console.error('Named pipe server error:', err);
+    });
+
+    pipeServer.listen(PIPE_NAME, () => {
+        console.log(`Server listening on pipe: ${PIPE_NAME}`);
+    });
+}
+
+function sendFileToAutoCAD(fileId) {
+    const db = new sqlite3.Database(databasePath, (err) => {
+        if (err) {
+            console.error('Error opening database:', err.message);
+            return;
+        }
+
+        db.get("SELECT filename FROM Files WHERE fileId = ?", [fileId], (err, row) => {
+            if (err) {
+                console.error('Error fetching file data:', err.message);
+                return;
+            }
+
+            if (row) {
+                const documentsFolderPath = path.join(selectedFolderPath, 'Documents');
+                const filePath = path.join(documentsFolderPath, row.filename);
+
+                fs.readFile(filePath, (err, data) => {
+                    if (err) {
+                        console.error('Error reading file:', err);
+                        return;
+                    }
+
+                    if (activeConnection) {
+                        // Send file size first
+                        activeConnection.write(`FILE_SIZE:${data.length}\n`);
+                        
+                        // Then send the file content
+                        activeConnection.write(data);
+                        
+                        // Send an end marker
+                        activeConnection.write('\nEND_OF_FILE\n');
+
+                        // Confirm that the file has been sent
+                        console.log(`File ${row.filename} has been sent to AutoCAD successfully.`);
+                    } else {
+                        console.error('No active connection to AutoCAD plugin');
+                    }
+                });
+            } else {
+                console.error(`File with ID ${fileId} not found.`);
+            }
+        });
+    });
+}
+
+function fetchDataAndSend() {
+    console.log("Fetching data from database");
+    if (!projectdb) {
+        console.error('Database not initialized.');
+        return;
+    }
+    projectdb.all('SELECT * FROM projectdetails', (err, rows) => {
+        if (err) {
+            console.error('Error fetching data:', err.message);
+            return;
+        }
+        console.log("Fetched data:", rows);
+        mainWindow.webContents.send('data-fetched', rows);
+    });
+}
 app.whenReady().then(() => {
     createMainWindow();
     // deleteprojectdb();
@@ -346,6 +502,7 @@ app.whenReady().then(() => {
     createProjectDatabase();
     // deleteProjectDetails('3');
     // allcolumns();
+    startNamedPipeServer();
 
     ipcMain.on('select-folder', () => {
         console.log("Received 'select-folder' request from renderer process");
@@ -403,6 +560,41 @@ app.whenReady().then(() => {
                         mainWindow.webContents.send('all-docs-fetched', rows);
                     });
 
+                    db.all("SELECT * FROM Documents WHERE type = ?", ["iXB"], (err, documents) => {
+                        if (err) {
+                            console.error('Error fetching data from Documents table:', err.message);
+                            return;
+                        }
+                        console.log('Data in the Documents table:', documents);
+                        
+                        const docIds = documents.map(doc => doc.docId);
+                        
+                        db.all("SELECT * FROM Files WHERE docId IN (" + docIds.map(() => '?').join(',') + ")", docIds, (err, files) => {
+                            if (err) {
+                                console.error('Error fetching data from Files table:', err.message);
+                                return;
+                            }
+                            console.log('Data in the Files table:', files);
+                            
+                            // Send both documents and files data to AutoCAD
+                            if (activeConnection) {
+                                activeConnection.write(JSON.stringify({ documents, files }) + '\n');
+                            } else {
+                                console.error('No active connection to AutoCAD plugin');
+                            }
+                        });
+                    });
+
+                    db.all("SELECT * FROM Files", (err, rows) => {
+                        if (err) {
+                            console.error('Error fetching data from Tree table:', err.message);
+                            return;
+                        }
+
+                        console.log('Data in the Files table:', rows);
+                        // mainWindow.webContents.send('all-docs-fetched', rows);
+                    });
+
                     db.all("SELECT * FROM Documents WHERE type = ?", ["iXB"], (err, rows) => {
                         if (err) {
                             console.error('Error fetching data from Documents table:', err.message);
@@ -412,6 +604,7 @@ app.whenReady().then(() => {
                         console.log('Data in the Documents table:', rows);
                         mainWindow.webContents.send('spid-docs-fetched', rows);
                     });
+                    
                     db.all("SELECT * FROM Elements", (err, rows) => {
                         if (err) {
                             console.error('Error fetching data from Tree table:', err.message);
@@ -529,27 +722,13 @@ app.whenReady().then(() => {
         });
     })
 
+   
     ipcMain.on('fetch-data', (event) => {
         console.log("Received 'fetch-data' request from renderer process");
-        if (!projectdb) {
-            console.error('Database not initialized.');
-            return;
-        }
-        // Query database for user data
-        projectdb.all('SELECT * FROM projectdetails', (err, rows) => {
-            if (err) {
-                console.error('Error fetching data:', err.message);
-                return;
-            }
-            console.log("Fetched data:", rows);
-            // Send fetched data to renderer process
-            // event.sender.send('data-fetched', rows);
-            // console.log("Sent 'data-fetched' event to renderer process");
-            mainWindow.webContents.send('data-fetched', rows);
-        });
+        fetchDataAndSend();
     });
 
-
+ 
 
     // ipcMain.on('save-data', (event, data) => {
     //     if (!projectdb) {
@@ -689,6 +868,80 @@ app.whenReady().then(() => {
         }
     });
 
+    ipcMain.on('dxf-svg-converter', (event, file) => {
+        // const filePath = file.path;
+        // const dirPath = path.dirname(filePath);
+        // const fileStem = path.basename(filePath).split(path.extname(filePath))[0];
+        // const outputFilePath = path.resolve(dirPath, fileStem + '.svg');
+
+        // const execPath = path.resolve('converters', 'dfxconverter', 'dwg2svg2024.exe');
+        // const execParams = ['--output-svg=' + outputFilePath, '--tolerance=0.01', filePath];
+
+        // exec(execPath, execParams, function (err) {
+        //     if (err) {
+        //         event.reply('conversion-error', { message: 'Conversion failed' });
+        //         return;
+        //     }
+        //     const convertedFileName = path.basename(outputFilePath);
+        //     mainWindow.webContents.send('dxf-conversion-success', { convertedFilePath: outputFilePath, convertedFileName: convertedFileName });
+        // });
+
+        const filePath = file.path;
+        const dirPath = path.dirname(filePath);
+        const fileStem = path.basename(filePath, '.dxf');
+        const outputFilePath = path.join(dirPath, fileStem + '.svg');
+
+        fs.readFile(filePath, (err, data) => {
+            if (err) {
+                console.error('Error reading file:', err);
+                event.reply('conversion-error', { message: 'Error reading file: ' + err.message });
+                return;
+            }
+
+            try {
+                const parsed = dxf.parseString(data.toString());
+                console.log('Parsed DXF:', parsed);
+                const svg = dxfToSvg(parsed);
+
+                fs.writeFile(outputFilePath, svg, (err) => {
+                    if (err) {
+                        console.error('Error writing file:', err);
+                        event.reply('conversion-error', { message: 'Error writing file: ' + err.message });
+                        return;
+                    }
+                    console.log("outputFilePath", outputFilePath);
+                    const convertedFileName = path.basename(outputFilePath);
+                    event.reply('dxf-conversion-success', { convertedFilePath: outputFilePath, convertedFileName: convertedFileName });
+                });
+            } catch (error) {
+                console.error('Conversion error:', error);
+                event.reply('conversion-error', { message: 'Conversion failed: ' + error.message });
+            }
+        });
+    });
+
+    // ipcMain.on('dfx-svg-converter', async (event, data) => {
+    // const { name, path } = data;
+
+    // // Define the output SVG path
+    // const svgFilename = name.replace('.dwg', '.svg');
+    // const svgPath = path.join(path.dirname(path), svgFilename);
+
+    // try {
+    //     // Conversion process
+    //     await dxfConverter(path, svgPath);
+
+    //     // Send back the path and name of the converted SVG file
+    //     event.sender.send('dfx-conversion-success', {
+    //         name: svgFilename,
+    //         path: svgPath
+    //     });
+    // } catch (error) {
+    //     console.error('Conversion error:', error);
+    //     event.sender.send('dfx-conversion-failure', error.message);
+    // }
+    // });
+
     ipcMain.on('save-tag-data', (event, data) => {
         console.log("Received request to save tag");
         if (!databasePath) {
@@ -746,18 +999,18 @@ app.whenReady().then(() => {
                             console.error('Error fetching data from Tree table:', err.message);
                             return;
                         }
-        
+
                         console.log('Data in the Tag table:', rows);
                         mainWindow.webContents.send('all-tags-fetched', rows);
                     });
-        
-        
+
+
                     projectDb.all("SELECT * FROM TagInfo", (err, rows) => {
                         if (err) {
                             console.error('Error fetching data from Tree table:', err.message);
                             return;
                         }
-        
+
                         console.log('Data in the TagInfo table:', rows);
                         mainWindow.webContents.send('all-taginfo-fetched', rows);
                     });
@@ -785,18 +1038,18 @@ app.whenReady().then(() => {
                             console.error('Error fetching data from Tree table:', err.message);
                             return;
                         }
-        
+
                         console.log('Data in the Tag table:', rows);
                         mainWindow.webContents.send('all-tags-fetched', rows);
                     });
-        
-        
+
+
                     projectDb.all("SELECT * FROM TagInfo", (err, rows) => {
                         if (err) {
                             console.error('Error fetching data from Tree table:', err.message);
                             return;
                         }
-        
+
                         console.log('Data in the TagInfo table:', rows);
                         mainWindow.webContents.send('all-taginfo-fetched', rows);
                     });
@@ -970,63 +1223,111 @@ app.whenReady().then(() => {
 
 
 
-
     ipcMain.on('save-doc-data', (event, data) => {
         console.log("Received request to save document");
         if (!databasePath) {
             console.error('Project database path not available.');
             return;
         }
-
+    
         // Open the project's database
         const projectDb = new sqlite3.Database(databasePath, (err) => {
             if (err) {
                 console.error('Error opening project database:', err.message);
                 return;
             }
-
-
-            // const docId = uuid.v4();
+            
             const docId = generateCustomID('D');
-            // Insert data into the Tree table of the project's database
-            projectDb.run('INSERT INTO Documents (docId,number,title,descr,type,filename) VALUES (?,?,?,?,?,?)', [docId, data.number, data.title, data.descr, data.type, data.filename], function (err) {
+            const fileId = generateCustomID('I');
+            
+            // Insert data into the Documents table of the project's database
+            projectDb.run('INSERT INTO Documents (docId, number, title, descr, type) VALUES (?, ?, ?, ?, ?)', 
+                [docId, data.number, data.title, data.descr, data.type], function (err) {
                 if (err) {
-                    console.error('Error inserting data:', err.message);
+                    console.error('Error inserting data into Documents:', err.message);
                     return;
                 }
                 console.log(`Row inserted with document number: ${data.number}`);
             });
+    
             // Create a folder named 'Documents' in the project folder
             const documentsFolderPath = path.join(selectedFolderPath, 'Documents');
             if (!fs.existsSync(documentsFolderPath)) {
                 fs.mkdirSync(documentsFolderPath);
                 console.log('Documents folder created.');
             }
-
-            // Move the file into the 'Documents' folder
-            const fileToMove = data.filePath;
-            const fileName = path.basename(fileToMove);
-            const destinationPath = path.join(documentsFolderPath, fileName);
-            fs.copyFileSync(fileToMove, destinationPath);
-            console.log(`File '${fileName}' moved to 'Documents' folder.`);
-
-
+    
+            // Handle the original file if filename is provided
+            if (data.filename) {
+                // Insert the original file data into the Files table
+                projectDb.run('INSERT INTO Files (docId, fileId, filename) VALUES (?, ?, ?)', 
+                    [docId, fileId, data.filename], function (err) {
+                    if (err) {
+                        console.error('Error inserting data into Files:', err.message);
+                        return;
+                    }
+                    console.log(`Row inserted with file Id: ${fileId}`);
+                });
+    
+                const fileToMove = data.filePath;
+                const fileName = path.basename(fileToMove);
+                const destinationPath = path.join(documentsFolderPath, fileName);
+                fs.copyFileSync(fileToMove, destinationPath);
+                console.log(`File '${fileName}' moved to 'Documents' folder.`);
+            }
+    
+            // Handle the template file if template is 'DT'
+            if (data.template === 'DT') {
+                const templateFileId = generateCustomID('I');
+                const templateFileName = `${templateFileId}.dwg`;
+                
+                // Update the sourcePath to point to the correct location of 'empty.dwg'
+                const sourcePath = path.join(selectedFolderPath, 'Documents', 'empty.dwg');
+                const templateDestinationPath = path.join(documentsFolderPath, templateFileName);
+    
+                // Add a check to ensure the source file exists before attempting to copy
+                if (fs.existsSync(sourcePath)) {
+                    fs.copyFileSync(sourcePath, templateDestinationPath);
+                    console.log(`Template file copied and renamed to '${templateFileName}'`);
+    
+                    // Insert the template file data into the Files table
+                    projectDb.run('INSERT INTO Files (docId, fileId, filename) VALUES (?, ?, ?)', 
+                        [docId, templateFileId, templateFileName], function (err) {
+                        if (err) {
+                            console.error('Error inserting template file data:', err.message);
+                            return;
+                        }
+                        console.log(`Template file inserted with file Id: ${templateFileId}`);
+                    });
+                } else {
+                    console.error(`Template file 'empty.dwg' not found at ${sourcePath}`);
+                }
+            }
+    
+            // Fetch and send updated data
             projectDb.all("SELECT * FROM Documents", (err, rows) => {
                 if (err) {
-                    console.error('Error fetching data from Tree table:', err.message);
+                    console.error('Error fetching data from Documents table:', err.message);
                     return;
                 }
-
                 console.log('Data in the Documents table:', rows);
                 mainWindow.webContents.send('all-docs-fetched', rows);
             });
+    
+            projectDb.all("SELECT * FROM Files", (err, rows) => {
+                if (err) {
+                    console.error('Error fetching data from Files table:', err.message);
+                    return;
+                }
+                console.log('Data in the Files table:', rows);
+            });
+    
             projectDb.all("SELECT * FROM Documents WHERE type = ?", ["iXB"], (err, rows) => {
                 if (err) {
                     console.error('Error fetching data from Documents table:', err.message);
                     return;
                 }
-
-                console.log('Data in the Documents table:', rows);
+                console.log('Data in the Documents table (type iXB):', rows);
                 mainWindow.webContents.send('spid-docs-fetched', rows);
             });
         });
@@ -1817,7 +2118,7 @@ app.whenReady().then(() => {
 
             // Update the record in the database
             projectDb.run('UPDATE UserTagInfoFieldUnits SET statuscheck = ? WHERE id = ?',
-                [statuscheck,id],
+                [statuscheck, id],
                 (err) => {
                     if (err) {
                         console.error('Error updating UserTagInfoFieldUnits table:', err.message);
@@ -3716,7 +4017,7 @@ app.whenReady().then(() => {
             // const commentId = uuid.v4();
             const commentId = generateCustomID('C');
             // Insert data into the Tree table of the project's database
-            projectDb.run('INSERT INTO CommentStatus (commentId,statusname,color) VALUES (?,?,?)', [commentId, data.statusname, data.color], function (err) {
+            projectDb.run('INSERT INTO CommentStatus (number,statusname,color) VALUES (?,?,?)', [commentId, data.statusname, data.color], function (err) {
                 if (err) {
                     console.error('Error inserting data:', err.message);
                     return;
@@ -4578,6 +4879,34 @@ app.whenReady().then(() => {
         });
     })
 
+    ipcMain.on('download-dwg', async (event) => {
+        const filePath = path.join(__dirname, 'templates', 'empty.dwg');
+
+        if (!fs.existsSync(filePath)) {
+            event.reply('download-error', 'File not found');
+            return;
+        }
+
+        try {
+            const fileData = fs.readFileSync(filePath);
+
+            const win = BrowserWindow.getFocusedWindow();
+
+            const { filePath: savePath } = await dialog.showSaveDialog(win, {
+                defaultPath: 'empty.dwg',
+                filters: [{ name: 'DWG Files', extensions: ['dwg'] }],
+            });
+
+            if (savePath) {
+                fs.writeFileSync(savePath, fileData);
+                event.reply('download-success', 'File downloaded successfully');
+            }
+        } catch (err) {
+            console.error('Error processing file download:', err);
+            event.reply('download-error', 'Error processing file download');
+        }
+    });
+
     ipcMain.on('saveUserDefinedFields', (event, fields) => {
         const projectDb = new sqlite3.Database(databasePath, (err) => {
             if (err) {
@@ -4811,4 +5140,32 @@ app.whenReady().then(() => {
 
         });
     });
+});
+app.on('will-quit', () => {
+    if (pipeServer) {
+        pipeServer.close(() => {
+            console.log('Named pipe server closed');
+        });
+    }
+    if (projectdb) {
+        projectdb.close((err) => {
+            if (err) {
+                console.error('Error closing database:', err.message);
+            } else {
+                console.log('Database connection closed');
+            }
+        });
+    }
+});
+
+app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+        app.quit();
+    }
+});
+
+app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+        createMainWindow();
+    }
 });

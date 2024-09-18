@@ -1,14 +1,29 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Alert from './Alert';
 import { saveAs } from 'file-saver';
 import * as XLSX from 'xlsx';
 import Table from 'react-bootstrap/Table';
+import Button from 'react-bootstrap/Button';
+import Modal from 'react-bootstrap/Modal';
+import Form from 'react-bootstrap/Form';
+import FloatingLabel from 'react-bootstrap/FloatingLabel';
 function CommentReview({ isSideNavOpen, allcomments }) {
     const [editedRowIndex, setEditedRowIndex] = useState(-1);
     const [editedLineData, setEditedLineData] = useState({});
     const [customAlert, setCustomAlert] = useState(false);
     const [modalMessage, setModalMessage] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
+    const [addform, setaddform] = useState(false)
+    const [addstatus, setaddstatus] = useState('')
+    const [addcolor, setaddcolor] = useState('')
+
+    useEffect(() => {
+        console.log(addcolor);
+    }, [addcolor])
+
+    useEffect(() => {
+        console.log(addstatus);
+    }, [addstatus])
 
     const handleEditOpen = (index) => {
         setEditedRowIndex(index);
@@ -89,6 +104,27 @@ function CommentReview({ isSideNavOpen, allcomments }) {
         comment.status.toLowerCase().includes(searchQuery.toLowerCase()) ||
         comment.createddate.includes(searchQuery)
     );
+
+    const handleaddClick = () => {
+        setaddform(true)
+    }
+
+    const handleAdd = () => {
+        const data = {
+            statusname: addstatus,
+            color: addcolor
+        }
+
+        setaddstatus('')
+        setaddcolor('')
+        window.api.send('add-commentdetails-table', data);
+        setaddform(false)
+        setCustomAlert(true);
+        setModalMessage("tag registered");
+        // alert("tag registered")
+    }
+
+    const handleClose = () => setaddform(false);
     return (
         <div className='doctab' style={{ width: isSideNavOpen ? '83.5%' : '100%', marginLeft: isSideNavOpen ? '260px' : '0%' }}>
             <form>
@@ -105,6 +141,7 @@ function CommentReview({ isSideNavOpen, allcomments }) {
                             <th id='dochead'>
                                 <i className="fa fa-download" title="Export" onClick={handleExport} ></i>
                                 <i className="fa-solid fa-trash-can ms-3" title='Delete all' onClick={handleDeleteAllComments} ></i>
+                                <i class="fa-solid fa-circle-plus ps-2" title onClick={handleaddClick}></i>
                             </th>
 
                         </tr>
@@ -124,7 +161,7 @@ function CommentReview({ isSideNavOpen, allcomments }) {
                         {filteredComments.map((comment, index) => (
                             <tr key={index} style={{ color: 'black' }}>
                                 <td style={{ backgroundColor: '#f0f0f0' }}>{comment.number}</td>
-                                <td id='tagb'> 
+                                <td id='tagb'>
                                     {editedRowIndex === index ?
                                         <input
                                             type="text"
@@ -203,6 +240,41 @@ function CommentReview({ isSideNavOpen, allcomments }) {
                 </Table>
 
             </form>
+
+            <Modal show={addform} onHide={handleClose}>
+                <Modal.Header style={{ backgroundColor: '#ebedeb' }} closeButton>
+                    <Modal.Title>Add Comment Status Details</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Form>
+
+                        <FloatingLabel
+                            controlId="floatingInput1"
+                            label="status"
+                            className="mb-2"
+                        >
+                            <Form.Control onChange={(e) => setaddstatus(e.target.value)} value={addstatus} name='uid' type="text" placeholder="status" />
+                        </FloatingLabel>
+                        <FloatingLabel
+                            controlId="floatingInput2"
+                            label="color"
+                            className="mb-2"
+                        >
+                            <Form.Control onChange={(e) => setaddcolor(e.target.value)} value={addcolor} name='inr' type="text" placeholder="color" />
+                        </FloatingLabel>
+
+
+                    </Form>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={handleClose}>
+                        Close
+                    </Button>
+                    <Button variant="primary" onClick={handleAdd}>
+                        Add
+                    </Button>
+                </Modal.Footer>
+            </Modal>
 
             {customAlert && (
                 <Alert

@@ -16,6 +16,7 @@ import CommentReview from '../components/CommentReview';
 function Home() {
   var file = {}
   const fileInputRef = useRef(null);
+  const autofileRef = useRef(null);
   const [isSideNavOpen, setIsSideNavOpen] = useState(true);
   const [loadProject, setloadProject] = useState(false);
   const [isequlist, setequlist] = useState(false)
@@ -65,8 +66,11 @@ function Home() {
   const [docTitle, setdocTitle] = useState('')
   const [docDes, setdocDes] = useState('')
   const [docType, setdocType] = useState('')
+  const [docTem, setdocTem] = useState('')
   const [docFilename, setdocFilename] = useState('')
   const [docFilepath, setdocFiilepath] = useState('')
+  const [dwgFilename, setdwgFilename] = useState('')
+  const [dwgFilepath, setdwgFiilepath] = useState('')
   const [allspids, setAllspids] = useState([]);
   const [taginfo, settaginfo] = useState([])
   const [itemToDelete, setItemToDelete] = useState(null);
@@ -523,6 +527,12 @@ function Home() {
     console.log(docFilename);
     console.log(docFilepath);
     console.log(docType);
+    console.log(docTem);
+    
+    // console.log(dwgFilename);
+    // console.log(dwgFilepath);
+
+
 
     if (!docNumber && !docType) {
       setCustomAlert(true);
@@ -537,7 +547,8 @@ function Home() {
         descr: docDes,
         type: docType,
         filename: docFilename,
-        filePath: docFilepath
+        filePath: docFilepath,
+        template:docTem
       };
       setdocNumber('')
       setdocTitle('')
@@ -545,9 +556,11 @@ function Home() {
       setdocType('');
       setdocFilename('')
       setdocFiilepath('')
+      setdocTem('')
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+
       window.api.send('save-doc-data', data);
       setCustomAlert(true);
       setModalMessage("Document added");
@@ -564,9 +577,41 @@ function Home() {
     console.log(file);
     console.log(file.name);
     console.log(file.path);
-    setdocFilename(file.name)
-    setdocFiilepath(file.path)
+    // setdocFilename(file.name)
+    const fileExtension = file.name.split('.').pop().toLowerCase();
+    console.log(fileExtension);
+
+    if (fileExtension === 'dxf') {
+      console.log("enter dxf");
+      const data = {
+        name: file.name,
+        path: file.path
+      };
+      window.api.send("dxf-svg-converter", data);
+    } else {
+      setdocFilename(file.name)
+      setdocFiilepath(file.path);
+    }
   }
+
+  const handleautodocadd = (event) => {
+    console.log(event);
+    file = event.target.files[0];
+    console.log(file);
+    console.log(file.name);
+    console.log(file.path);
+    setdwgFiilepath(file.path)
+    setdwgFilename(file.name)
+  }
+
+  useEffect(() => {
+    window.api.receive('dxf-conversion-success', (data) => {
+      console.log(data);
+
+      // setdocFilename(data.name);
+      // setdocFilepath(data.path);
+    });
+  }, []);
 
   const handledocdis = async (id, docId) => {
     console.log("Enter doc click");
@@ -641,8 +686,11 @@ function Home() {
     { code: 'XT', name: 'Wiring diagrams' },
     { code: 'XU', name: 'Loop diagram' },
     { code: 'XX', name: 'Drawings - miscellaneous' },
-    { code: 'ZA', name: 'EDP documentation' }
+    { code: 'ZA', name: 'EDP documentation' },
+    { code: 'TPL', name: 'Template' }
   ]
+
+  const doctem=[{code: 'DT', name: 'DWG Template'},{code:'LT',name:'LINE Template'},{code:'ET',name:'EQUIPMENT Template'}]
 
   const handleDeleteProject = (projectId) => {
     console.log("projectId", projectId)
@@ -1482,6 +1530,18 @@ function Home() {
 
   }, [isDiv1Visible])
 
+  const handledwgDownload = () => {
+    console.log('Download button clicked');
+    window.api.send('download-dwg');
+  };
+
+  window.api.receive('download-success', (message) => {
+    alert(message); // Notify the user of a successful download
+  });
+
+  window.api.receive('download-error', (message) => {
+    alert(`Error: ${message}`); // Notify the user of any errors during download
+  });
   return (
 
     <div>
@@ -1773,11 +1833,13 @@ function Home() {
 
         {isdocreg && <div className='docreg' style={{ width: isSideNavOpen ? '83.5%' : '100%', marginLeft: isSideNavOpen ? '260px' : '0%' }}>
           <div class="page dark">
+
             <section class="page-section">
 
               <h1 style={{ color: '#8C97F5' }}>Document registration</h1>
 
             </section>
+            {/* <button type='button' onClick={handledwgDownload}>Download Empty DWG</button> */}
             <form >
               <section class="page-section">
                 <div class="row">
@@ -1797,11 +1859,6 @@ function Home() {
                   <textarea onChange={(e) => setdocDes(e.target.value)} value={docDes} id="docRegDescr" name='des' class="page-input-long w-25" ></textarea>
                 </div>
                 <div class="row">
-                  <label className='mb-2' for="docRegFile">Document file</label>
-                  <br />
-                  <input type="file" id="docRegFile" class="page-input" ref={fileInputRef} onChange={handledocadd} />
-                </div>
-                <div class="row">
                   <label className='mb-2' for="DCRegType">Type *</label>
                   <br />
 
@@ -1812,6 +1869,34 @@ function Home() {
                     ))}
                   </select>
                 </div>
+                <div class="row">
+                  <label className='mb-2' for="DCRegTem">Template </label>
+                  <br />
+
+                  <select onChange={(e) => setdocTem(e.target.value)} value={docTem} class="form-select w-25 " id="inputGroupSelect03" name='dtem'>
+                    <option value="" disabled selected>Choose...</option>
+                    {doctem.map((item, index) => (
+                      <option key={index} value={item.code}>{item.code}-{item.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div class="row">
+                  <label className='mb-2' for="docRegFile">Document file</label>
+                  <br />
+                  <input type="file" id="docRegFile" class="page-input" ref={fileInputRef} onChange={handledocadd} />
+                </div>
+                {/* <div class="row">
+                  <label className='mb-2' for="autoRegFile">Empty DWG file for autocad</label>
+                  <br />
+                  <input type="file" id="autoRegFile" class="page-input" ref={autofileRef} onChange={handleautodocadd} />
+                </div> */}
+
+
+                {/* <div class="row">
+                  <label className='mb-2' for="autoRegFile">Empty DWG file for autocad</label>
+                  <br />
+                  <input type="file" id="autoRegFile" class="page-input" ref={autofileRef} onChange={handleautodocadd} />
+                </div> */}
               </section>
               <button type='button' onClick={(e) => handledocReg(e)}>Register</button>
             </form>
